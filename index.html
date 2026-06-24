@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <style>
+    :root {
+      --bg: #081122;
+      --panel: rgba(15, 23, 42, 0.78);
+      --line: rgba(148, 163, 184, 0.14);
+      --text: #e5eefb;
+      --muted: #93a4bf;
+      --accent: #60a5fa;
+      --accent-2: #7c3aed;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --chip: rgba(255, 255, 255, 0.06);
+      --shadow: 0 18px 45px rgba(2, 8, 23, 0.40);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(124, 58, 237, 0.18), transparent 25%),
+        radial-gradient(circle at top left, rgba(96, 165, 250, 0.12), transparent 30%),
+        linear-gradient(180deg, var(--bg), #050b17 100%);
+      overflow: hidden;
+    }
+
+    .app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .pages {
+      display: flex;
+      width: 200vw;
+      height: 100vh;
+      transform: translateX(0);
+      transition: transform 0.58s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    .page {
+      min-height: 100vh;
+      height: auto;
+      display: block; 
+      width: 100vw;
+      padding: 22px 24px 86px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      gap: 18px;
+      align-content: start;
+      scrollbar-color: rgba(148,163,184,0.18) transparent;
+      scrollbar-width: thin;
+    }
+    .page::-webkit-scrollbar { width: 10px; }
+    .page::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.18); border-radius: 999px; }
+    .page::-webkit-scrollbar-track { background: transparent; }
+
+    .hero, .kanban-wrap, .logs-wrap, .tools-card {
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -16% -56% auto;
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle, rgba(96,165,250,0.24), transparent 70%);
+      pointer-events: none;
+    }
+
+    .brand { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+    .brand-badge {
+      width:54px; height:54px; border-radius:16px; display:grid; place-items:center;
+      background: linear-gradient(135deg, rgba(96,165,250,0.25), rgba(124,58,237,0.28));
+      border:1px solid rgba(255,255,255,0.08); font-size:24px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .brand h1 { margin:0; font-size:1.62rem; letter-spacing:-0.02em; }
+    .brand p { margin:4px 0 0; color:var(--muted); font-size:0.95rem; max-width: 920px; }
+
+    .hero-grid { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px; margin-top:14px; }
+    .stat {
+      background: var(--chip);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      transition: transform .24s ease, border-color .24s ease, box-shadow .24s ease;
+    }
+    .stat:hover { transform: translateY(-2px); border-color: rgba(96,165,250,0.25); box-shadow: 0 10px 24px rgba(2,8,23,0.2); }
+    .stat .label { color:var(--muted); font-size:0.86rem; margin-bottom:6px; }
+    .stat .value { font-size:1.4rem; font-weight:700; letter-spacing:-0.02em; }
+
+    .controls { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .controls.single { grid-template-columns: 1fr; }
+    input, select, textarea, button { font: inherit; }
+    input, select, textarea {
+      width:100%; background: rgba(255,255,255,0.04); color:var(--text); border:1px solid var(--line);
+      border-radius:12px; padding:11px 12px; outline:none; transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(96,165,250,0.42); box-shadow: 0 0 0 4px rgba(96,165,250,0.12); background: rgba(255,255,255,0.06);
+    }
+    textarea { min-height: 160px; resize: vertical; line-height: 1.45; }
+
+    button {
+      border:0; padding:11px 14px; border-radius:12px; cursor:pointer; font-weight:600; letter-spacing:0.01em;
+      transition: transform .14s ease, opacity .18s ease, filter .18s ease, box-shadow .18s ease;
+    }
+    button:hover { filter: brightness(1.06); box-shadow: 0 12px 28px rgba(2,8,23,0.22); }
+    button:active { transform: scale(0.98); }
+    .btn-primary { color:white; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+    .btn-secondary { color:var(--text); background: rgba(255,255,255,0.06); border: 1px solid var(--line); }
+    .btn-ghost {
+      color: var(--text);
+      background: rgba(255,255,255,0.035);
+      border: 1px dashed rgba(148,163,184,0.22);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 52px;
+    }
+
+    .kanban-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .toolbar-actions { display:flex; gap:10px; flex-wrap: wrap; }
+
+    .kanban-wrap {
+      padding: 18px;
+      min-height: 0;
+      height: auto;
+    }
+    .section-title { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
+    .section-title h2, .section-title h3 { margin:0; font-size:1rem; }
+    .section-title span { color:var(--muted); font-size:0.84rem; }
+    .kanban {
+      min-height: auto;
+      align-items: flex-start;
+      display:grid;
+      grid-template-columns: repeat(3, minmax(320px,1fr));
+      gap:14px;
+      height: auto;
+    }
+    .column {
+      min-height: 200px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.025));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:12px;
+      height: auto;
+      transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      align-self: start;
+    }
+    .column.drag-over {
+      border-color: rgba(96,165,250,0.38);
+      background: linear-gradient(180deg, rgba(96,165,250,0.10), rgba(255,255,255,0.03));
+      box-shadow: inset 0 0 0 1px rgba(96,165,250,0.16);
+    }
+    .column-header {
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:4px 2px 10px; position:sticky; top:0; z-index:2;
+      background: linear-gradient(180deg, rgba(12,18,34,0.96), rgba(12,18,34,0.72) 80%, transparent);
+      border-radius:12px;
+    }
+    .column-title { display:flex; align-items:center; gap:9px; font-weight:700; }
+    .dot { width:10px; height:10px; border-radius:999px; box-shadow: 0 0 0 6px rgba(255,255,255,0.03); }
+    .dot.creada { background:#94a3b8; }
+    .dot.progreso { background:#60a5fa; }
+    .dot.finalizada { background:#22c55e; }
+    .count {
+      padding:4px 10px; border-radius:999px; background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line); color:var(--muted); font-size:0.82rem; font-weight:600;
+    }
+    .dropzone-empty {
+      border:1px dashed rgba(148,163,184,0.18); border-radius:14px; padding:18px 14px;
+      text-align:center; color:var(--muted); font-size:0.92rem; background: rgba(255,255,255,0.025);
+    }
+
+    .task {
+      position:relative;
+      background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(12,18,34,0.9));
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      box-shadow: 0 14px 28px rgba(2,8,23,0.22);
+      transition: transform .18s ease, border-color .2s ease, box-shadow .2s ease, opacity .2s ease;
+      cursor:grab;
+      overflow:hidden;
+    }
+    .task::before {
+      content:""; position:absolute; inset:0 auto 0 0; width:4px; background:var(--warning); border-radius:8px 0 0 8px;
+    }
+    .task:hover { transform: translateY(-3px); border-color: rgba(96,165,250,0.26); box-shadow: 0 18px 30px rgba(2,8,23,0.26); }
+    .task.dragging { opacity:0.55; transform: rotate(1deg) scale(1.02); cursor:grabbing; }
+    .task.updated { animation: pulseGlow .58s ease; }
+    .task.new { animation: slideUp .40s ease; }
+
+    .task.drop-before {
+      box-shadow: 0 -3px 0 0 rgba(96,165,250,0.9), 0 14px 28px rgba(2,8,23,0.22);
+    }
+    .column-body {
+      min-height: 24px;
+      position: relative;
+    }
+    .column-body.drop-at-end::after {
+      content: "";
+      display: block;
+      height: 3px;
+      margin: 8px 4px 0;
+      border-radius: 999px;
+      background: rgba(96,165,250,0.9);
+      box-shadow: 0 0 0 4px rgba(96,165,250,0.12);
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow:0 0 0 rgba(96,165,250,0); }
+      45% { box-shadow:0 0 0 6px rgba(96,165,250,0.12), 0 0 24px rgba(96,165,250,0.24); }
+      100% { box-shadow:0 0 0 rgba(96,165,250,0); }
+    }
+    @keyframes slideUp { from { opacity:0; transform: translateY(12px);} to { opacity:1; transform:translateY(0);} }
+
+    .priority-alta::before { background:var(--danger); }
+    .priority-media::before { background:var(--warning); }
+    .priority-baja::before { background:var(--success); }
+    .task-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .task-title { font-weight:700; line-height:1.25; font-size:0.98rem; letter-spacing:-0.01em; margin:0; }
+    .grip { color:var(--muted); user-select:none; font-size:1rem; line-height:1; opacity:0.65; }
+    .task-desc { color:#c4d1e6; opacity:0.92; line-height:1.45; font-size:0.92rem; margin:0 0 12px; white-space:pre-line; }
+    .task-meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .chip {
+      display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px;
+      background: rgba(255,255,255,0.055); border: 1px solid var(--line); color:var(--muted); font-size:0.8rem; font-weight:600;
+    }
+    .chip.priority-alta { color:#fecaca; border-color: rgba(239,68,68,0.2); background: rgba(239,68,68,0.08); }
+    .chip.priority-media { color:#fde68a; border-color: rgba(245,158,11,0.2); background: rgba(245,158,11,0.08); }
+    .chip.priority-baja { color:#bbf7d0; border-color: rgba(34,197,94,0.2); background: rgba(34,197,94,0.08); }
+    .chip.code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .actions-box {
+      margin-bottom: 12px; padding: 10px 12px; border-radius: 14px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(148,163,184,0.12);
+    }
+    .actions-title { margin: 0 0 8px; font-size: 0.84rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .actions-list { margin: 0; padding-left: 18px; }
+    .actions-list li { color: #dbe7fb; font-size: 0.88rem; line-height: 1.45; margin-bottom: 6px; }
+    .actions-empty { color: var(--muted); font-size: 0.88rem; margin: 0; }
+    .task-actions { display:flex; flex-wrap:wrap; gap:8px; border-top: 1px solid rgba(148,163,184,0.12); padding-top:12px; }
+    .task-actions button { padding:9px 11px; font-size:0.82rem; border-radius:10px; min-width:110px; }
+    .btn-state { color:var(--text); background: rgba(255,255,255,0.05); border:1px solid var(--line); }
+    .btn-state.active { color:white; border-color:transparent; transform: translateY(-1px); }
+    .btn-state.active[data-state="Creada"] { background: linear-gradient(135deg, #64748b, #475569); }
+    .btn-state.active[data-state="En progreso"] { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .btn-state.active[data-state="Finalizada"] { background: linear-gradient(135deg, #22c55e, #16a34a); }
+
+    .page-tools-grid {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 18px;
+      min-height: calc(100vh - 118px);
+    }
+    .tools-stack { display: grid; gap: 18px; align-content: start; }
+    .tools-card, .logs-wrap { padding:18px; }
+    .footer-tip { color:var(--muted); font-size:0.86rem; }
+    .tool-actions { display:flex; flex-wrap:wrap; gap:10px; }
+    .divider { height:1px; background: rgba(148,163,184,0.12); margin: 4px 0 0; }
+
+    .tooltip-wrap { position: relative; display: inline-flex; align-items: center; }
+    .info-chip {
+      width: 26px; height: 26px; border-radius: 999px; display: inline-grid; place-items: center;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--muted);
+      font-weight: 700; font-size: 0.9rem; cursor: help;
+    }
+    .tooltip {
+      position: absolute; top: calc(100% + 10px); right: 0; left: 10%; width: min(420px, 70vw);
+      padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(148,163,184,0.16);
+      background: rgba(5,11,23,0.96); color: #d8e6fb; box-shadow: 0 18px 40px rgba(2,8,23,0.36);
+      opacity: 0; visibility: hidden; transform: translateY(6px);
+      transition: opacity .18s ease, transform .18s ease, visibility .18s ease; z-index: 20; line-height: 1.45;
+      font-size: 0.84rem; pointer-events: none;
+    }
+    .tooltip-wrap:hover .tooltip,
+    .tooltip-wrap:focus-within .tooltip { opacity: 1; visibility: visible; transform: translateY(0); }
+    .tooltip code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 8px;
+    }
+
+    .logs-wrap { display:flex; flex-direction:column; }
+    .log-list { display:flex; flex-direction:column; gap:10px; overflow:auto; padding-right:4px; max-height: calc(100vh - 220px); }
+    .log-item {
+      display:grid; grid-template-columns: auto 1fr; gap:10px; align-items:start;
+      border:1px solid var(--line); background: rgba(255,255,255,0.035); border-radius:14px; padding:12px; animation: fadeIn .28s ease;
+    }
+    .log-icon { width:28px; height:28px; border-radius:10px; display:grid; place-items:center; background: rgba(96,165,250,0.12); color:#93c5fd; font-size:0.95rem; }
+    .log-text { color:#d3def1; line-height:1.36; font-size:0.9rem; }
+    .log-time { margin-top:6px; color:var(--muted); font-size:0.8rem; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(4px);} to { opacity:1; transform:none; } }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    .nav-ui {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(8, 17, 34, 0.82);
+      border: 1px solid rgba(148,163,184,0.16);
+      box-shadow: 0 16px 30px rgba(2,8,23,0.3);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .nav-arrow {
+      width: 44px; height: 44px; border-radius: 999px; padding: 0; display: inline-grid; place-items: center;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--text); font-size: 1rem;
+    }
+    .nav-arrow:disabled { opacity: 0.38; cursor: default; box-shadow: none; filter: none; }
+    .pager-dots { display: flex; gap: 8px; align-items: center; }
+    .pager-dot {
+      width: 10px; height: 10px; border-radius: 999px; background: rgba(148,163,184,0.34);
+      transition: transform .28s ease, background .28s ease, width .28s ease;
+      cursor: pointer;
+    }
+    .pager-dot.active { background: white; transform: scale(1.1); width: 22px; }
+
+    .backdrop {
+      position: fixed; inset: 0; background: rgba(2, 8, 23, 0.72); backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50;
+    }
+    .backdrop.open { display: flex; }
+    .modal {
+      width: min(960px, 100%); max-height: min(88vh, 920px); background: rgba(8, 17, 34, 0.98);
+      border: 1px solid rgba(148,163,184,0.18); border-radius: 22px; box-shadow: 0 24px 60px rgba(2,8,23,0.48);
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    .modal-header, .modal-footer {
+      padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      border-bottom: 1px solid rgba(148,163,184,0.12);
+    }
+    .modal-footer { border-bottom: 0; border-top: 1px solid rgba(148,163,184,0.12); justify-content: flex-end; }
+    .modal-body { overflow-y: auto; max-height: 60vh; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+    .modal-body textarea { min-height: 120px; max-height: 200px;}
+    .modal-subtitle { color: var(--muted); font-size: 0.9rem; }
+    .close-btn { width: 34px; height: 34px; border-radius: 999px; padding: 0; display: inline-grid; place-items: center; }
+
+    .hidden-storage { display:none !important; }
+
+    @media (max-width: 1380px) {
+      .page-tools-grid { grid-template-columns: 1fr; }
+      .log-list { max-height: none; }
+      .kanban-toolbar { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 1180px) {
+      .hero-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .kanban { grid-template-columns: 1fr; }
+      .column { min-height: 320px; }
+      .controls { grid-template-columns: 1fr; }
+    }
+  
+    /* 🟦 Modo edición del modal con animación suave */
+    .modal {
+      transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease, background .25s ease;
+    }
+    .modal.editing {
+      border: 1px solid rgba(96, 165, 250, 0.5);
+      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.15), 0 24px 60px rgba(2,8,23,0.48);
+      transform: translateY(-2px);
+    }
+    .modal.editing .modal-header {
+      background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(124,58,237,0.25));
+      transition: background .25s ease;
+    }
+    .modal.editing h3 {
+      color: #bfdbfe;
+      transition: color .25s ease;
+    }
+
+    #manualTaskNumber:disabled,
+    #manualTaskTitle:disabled,
+    #manualTaskPriority:disabled,
+    #manualTaskStatus:disabled {
+      color: #e5eefb74; /* negro oscuro */
+      background: rgba(148, 163, 184, 0.12);
+      border: 1px dashed rgba(148, 163, 184, 0.35);
+    }
+
+
+    .actions-checklist {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .action-check-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: start;
+      color: #dbe7fb;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+    .action-check-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      accent-color: #22c55e;
+      cursor: pointer;
+      box-shadow: none;
+    }
+    .action-check-item.done .action-check-label {
+      color: #94a3b8;
+      text-decoration: line-through;
+    }
+    .task-suggestion {
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(34,197,94,0.24);
+      background: rgba(34,197,94,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .task-suggestion-text {
+      color: #bbf7d0;
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+    .task-suggestion button {
+      min-width: 0;
+      padding: 8px 10px;
+    }
+
+
+    .task-progress {
+      margin: 0 0 12px;
+      display: grid;
+      gap: 6px;
+    }
+    .task-progress-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .task-progress-bar {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(148,163,184,0.12);
+      overflow: hidden;
+    }
+    .task-progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      position: relative;
+      overflow: hidden;
+      transition: width .38s cubic-bezier(0.22, 1, 0.36, 1), background .28s ease, box-shadow .28s ease;
+      animation: progressPulse 1.8s ease-in-out infinite;
+    }
+    .task-progress-fill::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.22) 50%, transparent 100%);
+      transform: translateX(-100%);
+      animation: progressShine 2.2s ease-in-out infinite;
+    }
+    .task-progress-fill.progress-empty {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 0 0 1px rgba(239,68,68,0.12) inset;
+    }
+    .task-progress-fill.progress-mid {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      box-shadow: 0 0 0 1px rgba(245,158,11,0.12) inset;
+    }
+    .task-progress-fill.progress-full {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      box-shadow: 0 0 0 1px rgba(34,197,94,0.12) inset;
+    }
+    @keyframes progressShine {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(120%); }
+    }
+    @keyframes progressPulse {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.06); }
+    }
+
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="pages" id="pages">
+      <section class="page page-kanban">
+        <section class="hero">
+          <div class="brand">
+            <div class="brand-badge">🧠</div>
+            <div>
+              <h1>Dashboard TAREAS</h1>
+            </div>
+          </div>
+          <div class="hero-grid">
+            <div class="stat"><div class="label">Tareas totales</div><div class="value" id="statTotal">0</div></div>
+            <div class="stat"><div class="label">Prioridad alta</div><div class="value" id="statUrgent">0</div></div>
+            <div class="stat"><div class="label">Con acciones</div><div class="value" id="statActions">0</div></div>
+            <div class="stat"><div class="label">Última actualización</div><div class="value mono" id="statUpdated">—</div></div>
+          </div>
+
+          <div class="kanban-toolbar">
+            <div class="controls">
+              <select id="filterPriority">
+                <option value="">Prioridad · Todas</option>
+                <option value="alta">Alta</option>
+                <option value="media">Media</option>
+                <option value="baja">Baja</option>
+              </select>
+              <input id="filterSearch" placeholder="Buscar tarea..." />
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn-primary" id="openManualTaskBtn">➕ Crear tarea</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="kanban-wrap">
+          <div class="section-title"><h2>Kanban</h2><span>Arrastra las tarjetas entre columnas</span></div>
+          <div class="kanban">
+            <div class="column" data-status="Creada">
+              <div class="column-header">
+                <div class="column-title"><span class="dot creada"></span>Creada</div>
+                <div class="count" id="count-Creada">0</div>
+              </div>
+              <div class="column-body" id="col-Creada"></div>
+            </div>
+            <div class="column" data-status="En progreso">
+              <div class="column-header">
+                <div class="column-title"><span class="dot progreso"></span>En progreso</div>
+                <div class="count" id="count-En progreso">0</div>
+              </div>
+              <div class="column-body" id="col-En progreso"></div>
+            </div>
+            <div class="column" data-status="Finalizada">
+              <div class="column-header">
+                <div class="column-title"><span class="dot finalizada"></span>Finalizada</div>
+                <div class="count" id="count-Finalizada">0</div>
+              </div>
+              <div class="column-body" id="col-Finalizada"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="page page-tools">
+        <div class="page-tools-grid">
+          <div class="tools-stack">
+            <section class="tools-card">
+              <div class="section-title">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <h2>Formato JSON</h2>
+                  <div class="tooltip-wrap" tabindex="0">
+                    <span class="info-chip">i</span>
+                    <div class="tooltip">
+                      La entrada debe ser un array JSON de tareas con esta estructura:<br><br>
+                      <code>[{ "id": "TASK-001", "icono": "🔴", "titulo": "...", "descripcion": "...", "estado": "Creada", "acciones": [] }]</code><br><br>
+                      El mapeo de prioridad es: <code>🔴 = alta</code>, <code>🟠 = media</code>, <code>🟢 = baja</code>.
+                    </div>
+                  </div>
+                </div>
+                <span>Información contextual</span>
+              </div>
+              <div class="divider"></div>
+              <div class="tool-actions" style="margin-top:14px;">
+                <button class="btn-ghost" id="openAgentInputBtn">Importar JSON</button>
+                <button class="btn-primary" id="copyJsonBtn">Exportar JSON</button>
+                <button class="btn-secondary" id="reloadStoredJsonBtn">JSON guardado</button>
+                <button class="btn-secondary" id="loadDemoBtn">Cargar demo</button>
+                <button class="btn-secondary" id="resetStorageBtn">🧹 Limpiar datos guardados</button>
+              </div>
+              <div id="agentInputSummary" class="footer-tip" style="margin-top:12px;">No hay JSON cargado todavía.</div>
+            </section>
+
+            <section class="tools-card">
+              <div class="section-title"><h2>Persistencia local</h2><span>Guardado automático</span></div>
+              <div class="footer-tip">
+                Este dashboard guarda localmente:
+                <ul>
+                  <li>Estados movidos en el Kanban</li>
+                  <li>Tareas creadas manualmente</li>
+                  <li>Filtros</li>
+                  <li>JSON del agente pegado</li>
+                  <li>Página activa</li>
+                </ul>
+                Cuando entra un JSON nuevo, el estado manual se mantiene por <span class="mono">id</span>.
+              </div>
+            </section>
+          </div>
+
+          <aside class="logs-wrap">
+            <div class="section-title"><h3>Actividad</h3><span id="logsCounter">0 eventos</span></div>
+            <div class="log-list" id="logs"></div>
+            <div class="footer-tip" style="margin-top:14px;">Usa la página 1 para operar el Kanban y esta página para entrada/salida de JSON y trazabilidad.</div>
+          </aside>
+        </div>
+      </section>
+    </div>
+
+    <div class="nav-ui">
+      <button class="nav-arrow" id="prevPageBtn" aria-label="Página anterior">←</button>
+      <div class="pager-dots">
+        <span class="pager-dot active" data-page="0"></span>
+        <span class="pager-dot" data-page="1"></span>
+      </div>
+      <button class="nav-arrow" id="nextPageBtn" aria-label="Página siguiente">→</button>
+    </div>
+  </div>
+
+  <div class="backdrop" id="agentInputModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="agentModalTitle">
+      <div class="modal-header">
+        <div>
+          <h3 id="agentModalTitle" style="margin:0; font-size:1.05rem;">Pegar JSON del agente</h3>
+          <div class="modal-subtitle">Pega el array JSON y pulsa "Aplicar al tablero". Se conservarán localmente los estados manuales de las tareas existentes.</div>
+        </div>
+        <button class="btn-secondary close-btn" id="closeAgentModalBtn" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="agentJsonTextarea" placeholder='[
+  {
+    "id": "TASK-001",
+    "icono": "🔴",
+    "titulo": "Título",
+    "descripcion": "Descripción",
+    "estado": "Creada",
+    "acciones": []
+  }
+]'></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelAgentModalBtn">Cancelar</button>
+        <button class="btn-primary" id="applyAgentModalBtn">Aplicar al tablero</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="backdrop" id="manualTaskModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="manualModalTitle">
+      <div class="modal-header">
+        <div>
+          <h3 id="manualModalTitle" style="margin:0; font-size:1.05rem;">Crear tarea manual</h3>
+        </div>
+        <button class="btn-secondary close-btn" id="closeManualModalBtn" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="controls single">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="padding:10px 12px; background: rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:12px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;">TASK-</span>
+            <input id="manualTaskNumber" placeholder="001" />
+          </div>
+          <div id="taskIdError" style="color:#ef4444; font-size:0.8rem; display:none; margin-top:-4px; margin-bottom:4px;">
+            ⚠️ Este ID ya existe
+          </div>
+          <input id="manualTaskTitle" placeholder="Título de la tarea" />
+          <textarea id="manualTaskDescription" placeholder="Descripción"></textarea>
+          <textarea id="manualTaskActions" placeholder="Acciones (una por línea)"></textarea>
+          <div class="controls">
+            <select id="manualTaskPriority">
+              <option value="alta">Alta (🔴)</option>
+              <option value="media" selected>Media (🟠)</option>
+              <option value="baja">Baja (🟢)</option>
+            </select>
+            <select id="manualTaskStatus">
+              <option value="Creada">Creada</option>
+              <option value="En progreso">En progreso</option>
+              <option value="Finalizada">Finalizada</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelManualModalBtn">Cancelar</button>
+        <button class="btn-primary" id="applyManualModalBtn">Crear tarea</button>
+      </div>
+    </div>
+  </div>
+
+  <textarea id="rawInput" class="hidden-storage"></textarea>
+
+  <script>
+    const STATUSES = ["Creada", "En progreso", "Finalizada"];
+    const STORAGE_KEY = 'dashboard_agente_kanban_desktop_v2';
+    const PRIORITY_EMOJI = { alta: '🔴', media: '🟠', baja: '🟢' };
+    const PRIORITY_BY_ICON = { '🔴': 'alta', '🟠': 'media', '🟢': 'baja' };
+
+    const agentData = {
+      tasks: [],
+      logs: [],
+      lastUpdate: null,
+      currentPage: 0
+    };
+
+    let editingTaskId = null;
+    let draggedTaskId = null;
+
+    function nowLabel() {
+      return new Date().toLocaleString('es-ES', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    }
+
+    function addLog(message, icon = 'ℹ️') {
+      agentData.logs.unshift({ id: crypto.randomUUID(), message, icon, time: nowLabel() });
+      if (agentData.logs.length > 80) agentData.logs = agentData.logs.slice(0, 80);
+    }
+
+    function sanitize(text = '') {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function normalizeStatus(value) {
+      const clean = (value || '').trim().toLowerCase();
+      if (clean === 'finalizada') return 'Finalizada';
+      if (clean === 'en progreso') return 'En progreso';
+      return 'Creada';
+    }
+
+    function normalizeTask(rawTask, index, isManual = false) {
+      const icono = rawTask.icono || PRIORITY_EMOJI[rawTask.priority] || '🟠';
+      const priority = PRIORITY_BY_ICON[icono] || rawTask.priority || 'media';
+      const acciones = Array.isArray(rawTask.acciones)
+        ? rawTask.acciones.map(x => String(x).trim()).filter(Boolean)
+        : [];
+      const actionChecks = Array.isArray(rawTask.actionChecks)
+        ? acciones.map((_, idx) => Boolean(rawTask.actionChecks[idx]))
+        : acciones.map(() => false);
+      return {
+        id: String(rawTask.id || `TASK-${String(index + 1).padStart(3, '0')}`),
+        icono,
+        titulo: String(rawTask.titulo || 'Sin título'),
+        descripcion: String(rawTask.descripcion || 'Sin descripción adicional'),
+        estado: normalizeStatus(rawTask.estado),
+        acciones,
+        actionChecks,
+        priority,
+        source: rawTask.source || (isManual ? 'manual' : 'agent')
+      };
+    }
+
+    function parseAgentJson(rawText) {
+      let parsed;
+      try {
+        parsed = JSON.parse(rawText);
+      } catch (error) {
+        throw new Error('El contenido no es un JSON válido.');
+      }
+      if (!Array.isArray(parsed)) {
+        throw new Error('La entrada JSON debe ser un array de tareas.');
+      }
+      return parsed.map((task, index) => normalizeTask(task, index, false));
+    }
+
+    function taskToExport(task) {
+      return {
+        id: task.id,
+        icono: task.icono,
+        titulo: task.titulo,
+        descripcion: task.descripcion,
+        estado: task.estado,
+        acciones: Array.isArray(task.acciones) ? [...task.acciones] : [],
+        actionChecks: Array.isArray(task.actionChecks) ? [...task.actionChecks] : []
+      };
+    }
+
+    function updateAgentInputSummary() {
+      const raw = document.getElementById('rawInput').value.trim();
+      const summary = document.getElementById('agentInputSummary');
+      if (!raw) {
+        summary.textContent = 'No hay JSON cargado todavía.';
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        const count = Array.isArray(parsed) ? parsed.length : 0;
+        summary.textContent = `JSON cargado · ${count} tarea(s) en memoria.`;
+      } catch {
+        summary.textContent = 'Hay contenido guardado, pero no es un JSON válido.';
+      }
+    }
+
+    function saveState() {
+      const state = {
+        tasks: agentData.tasks,
+        logs: agentData.logs,
+        lastUpdate: agentData.lastUpdate,
+        currentPage: agentData.currentPage,
+        filters: {
+          priority: document.getElementById('filterPriority').value,
+          search: document.getElementById('filterSearch').value
+        },
+        rawInput: document.getElementById('rawInput').value
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      updateAgentInputSummary();
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const state = JSON.parse(raw);
+        agentData.tasks = Array.isArray(state.tasks)
+          ? state.tasks.map((task, index) => normalizeTask(task, index, task.source === 'manual'))
+          : [];
+        agentData.logs = Array.isArray(state.logs) ? state.logs : [];
+        agentData.lastUpdate = state.lastUpdate || null;
+        agentData.currentPage = Number.isInteger(state.currentPage) ? state.currentPage : 0;
+        document.getElementById('filterPriority').value = state.filters?.priority || '';
+        document.getElementById('filterSearch').value = state.filters?.search || '';
+        document.getElementById('rawInput').value = typeof state.rawInput === 'string' ? state.rawInput : '';
+        document.getElementById('agentJsonTextarea').value = document.getElementById('rawInput').value;
+        updateAgentInputSummary();
+        return true;
+      } catch (e) {
+        console.warn('No se ha podido cargar el estado guardado', e);
+        return false;
+      }
+    }
+
+    function clearState() {
+      localStorage.removeItem(STORAGE_KEY);
+      agentData.tasks = [];
+      agentData.logs = [];
+      agentData.lastUpdate = null;
+      agentData.currentPage = 0;
+      document.getElementById('filterPriority').value = '';
+      document.getElementById('filterSearch').value = '';
+      document.getElementById('rawInput').value = '';
+      document.getElementById('agentJsonTextarea').value = '';
+      updateAgentInputSummary();
+      updatePage();
+    }
+
+    function renderStats() {
+      document.getElementById('statTotal').textContent = agentData.tasks.length;
+      document.getElementById('statUrgent').textContent = agentData.tasks.filter(t => t.priority === 'alta').length;
+      document.getElementById('statActions').textContent = agentData.tasks.filter(t => Array.isArray(t.acciones) && t.acciones.length > 0).length;
+      document.getElementById('statUpdated').textContent = agentData.lastUpdate || '—';
+    }
+
+    function matchesFilters(task) {
+      const priorityValue = document.getElementById('filterPriority').value;
+      const searchValue = document.getElementById('filterSearch').value.trim().toLowerCase();
+      if (priorityValue && task.priority !== priorityValue) return false;
+      if (searchValue) {
+        const haystack = `${task.id} ${task.titulo} ${task.descripcion} ${(task.acciones || []).join(' ')}`.toLowerCase();
+        if (!haystack.includes(searchValue)) return false;
+      }
+      return true;
+    }
+
+    function areAllActionsCompleted(task) {
+      return Array.isArray(task.acciones) && task.acciones.length > 0 &&
+        Array.isArray(task.actionChecks) && task.acciones.every((_, idx) => Boolean(task.actionChecks[idx]));
+    }
+
+    function normalizeIncomingActionChecks(taskLike) {
+      const acciones = Array.isArray(taskLike?.acciones) ? taskLike.acciones : [];
+      const checks = Array.isArray(taskLike?.actionChecks) ? taskLike.actionChecks : [];
+      return acciones.map((_, idx) => Boolean(checks[idx]));
+    }
+
+    function syncActionChecks(existingTask, incomingTask) {
+      const existingActions = Array.isArray(existingTask?.acciones) ? existingTask.acciones : [];
+      const existingChecks = Array.isArray(existingTask?.actionChecks) ? existingTask.actionChecks : [];
+      const checkMap = new Map();
+      existingActions.forEach((action, idx) => {
+        if (!checkMap.has(action)) checkMap.set(action, []);
+        checkMap.get(action).push(Boolean(existingChecks[idx]));
+      });
+      return (Array.isArray(incomingTask.acciones) ? incomingTask.acciones : []).map(action => {
+        const queue = checkMap.get(action);
+        return queue && queue.length ? queue.shift() : false;
+      });
+    }
+
+    function getUpdatedActionChecks(existingTask, incomingTask) {
+      if (Array.isArray(incomingTask?.actionChecks)) {
+        return normalizeIncomingActionChecks(incomingTask);
+      }
+      return syncActionChecks(existingTask, incomingTask);
+    }
+    function toggleActionCheck(taskId, actionIndex, checked) {
+      const task = agentData.tasks.find(t => t.id === taskId);
+      if (!task || !Array.isArray(task.acciones) || !task.acciones[actionIndex]) return;
+      if (!Array.isArray(task.actionChecks)) {
+        task.actionChecks = task.acciones.map(() => false);
+      }
+      task.actionChecks[actionIndex] = Boolean(checked);
+      agentData.lastUpdate = nowLabel();
+      if (checked) {
+        addLog(`Acción completada en "${task.titulo}": ${task.acciones[actionIndex]}`, '✅');
+      } else {
+        addLog(`Acción desmarcada en "${task.titulo}": ${task.acciones[actionIndex]}`, '↩️');
+      }
+      renderAll();
+    }
+
+    function suggestTaskFinalization(taskId) {
+      const task = agentData.tasks.find(t => t.id === taskId);
+      if (!task || !areAllActionsCompleted(task) || task.estado === 'Finalizada') return;
+      addLog(`Sugerencia aceptada: la tarea "${task.titulo}" pasa a "Finalizada".`, '🏁');
+      setStatus(taskId, 'Finalizada');
+    }
+
+    function createTaskCard(task) {
+      const el = document.createElement('article');
+      el.className = `task priority-${task.priority}`;
+      el.setAttribute('draggable', 'true');
+      el.dataset.id = task.id;
+      const activeClass = (state) => task.estado === state ? 'active' : '';
+      const actionChecks = Array.isArray(task.actionChecks)
+        ? task.actionChecks
+        : (task.acciones || []).map(() => false);
+      const totalActions = task.acciones?.length || 0;
+      const completedActions = actionChecks.filter(Boolean).length;
+      const completionRatio = totalActions ? (completedActions / totalActions) : 0;
+      const progressClass = completionRatio === 1
+        ? 'progress-full'
+        : completionRatio === 0
+        ? 'progress-empty'
+        : 'progress-mid';
+      const progressMarkup = totalActions
+        ? `<div class="task-progress"><div class="task-progress-top"><span>Progreso</span><span>${completedActions}/${totalActions} completadas</span></div><div class="task-progress-bar"><div class="task-progress-fill ${progressClass}" style="width:${Math.round(completionRatio * 100)}%"></div></div></div>`
+        : '';
+      const actionsMarkup = Array.isArray(task.acciones) && task.acciones.length
+        ? `<div class="actions-box"><p class="actions-title">Acciones</p><ul class="actions-checklist">${task.acciones.map((a, idx) => {
+            const done = Boolean(actionChecks[idx]);
+            return `<li class="action-check-item ${done ? 'done' : ''}"><input type="checkbox" ${done ? 'checked' : ''} onchange="toggleActionCheck('${task.id}', ${idx}, this.checked)"><span class="action-check-label">${sanitize(a)}</span></li>`;
+          }).join('')}</ul></div>`
+        : `<div class="actions-box"><p class="actions-title">Acciones</p><p class="actions-empty">Sin acciones definidas</p></div>`;
+      const suggestionMarkup = areAllActionsCompleted(task) && task.estado !== 'Finalizada'
+        ? `<div class="task-suggestion"><div class="task-suggestion-text">✅ Todas las acciones están completadas. ¿Quieres pasar esta tarea a Finalizada?</div><button class="btn-secondary" onclick="suggestTaskFinalization('${task.id}')">Pasar a finalizada</button></div>`
+        : '';
+
+      el.innerHTML = `
+        <div class="task-top"><h4 class="task-title">${sanitize(task.titulo)}</h4><div class="grip" title="Arrastrar">⋮⋮</div></div>
+        <p class="task-desc">${sanitize(task.descripcion || 'Sin descripción adicional')}</p>
+        <div class="task-meta">
+          <span class="chip priority-${sanitize(task.priority)}">${sanitize(task.icono)} Prioridad ${sanitize(task.priority)}</span>
+          <span class="chip code">${sanitize(task.id)}</span>
+          <span class="chip">${task.acciones?.length ? '⚡' : '➖'} ${task.acciones?.length || 0} acciones</span>
+        </div>
+        ${progressMarkup}
+        ${actionsMarkup}
+        ${suggestionMarkup}
+        <div class="task-actions">
+          <button class="btn-state ${activeClass('Creada')}" data-state="Creada" onclick="setStatus('${task.id}','Creada')">Creada</button>
+          <button class="btn-state ${activeClass('En progreso')}" data-state="En progreso" onclick="setStatus('${task.id}','En progreso')">En progreso</button>
+          <button class="btn-state ${activeClass('Finalizada')}" data-state="Finalizada" onclick="setStatus('${task.id}','Finalizada')">Finalizada</button>
+          <button class="btn-secondary" onclick="editTask('${task.id}')">✏️ Editar</button>
+          <button class="btn-secondary" onclick="deleteTask('${task.id}')">🗑 Eliminar</button>
+        </div>`;
+
+      el.addEventListener('dragstart', (e) => {
+        draggedTaskId = task.id;
+        el.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', task.id);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      el.addEventListener('dragend', () => {
+        draggedTaskId = null;
+        el.classList.remove('dragging');
+        clearDropIndicators();
+        document.querySelectorAll('.column').forEach(column => column.classList.remove('drag-over'));
+      });
+      return el;
+    }
+
+    function renderKanban() {
+      const columns = {
+        'Creada': document.getElementById('col-Creada'),
+        'En progreso': document.getElementById('col-En progreso'),
+        'Finalizada': document.getElementById('col-Finalizada')
+      };
+      Object.values(columns).forEach(col => col.innerHTML = '');
+      const counts = { 'Creada': 0, 'En progreso': 0, 'Finalizada': 0 };
+
+      agentData.tasks.filter(matchesFilters).forEach(task => {
+        counts[task.estado]++;
+        columns[task.estado].appendChild(createTaskCard(task));
+      });
+
+      for (const status of STATUSES) {
+        const body = columns[status];
+        if (!body.children.length) {
+          const empty = document.createElement('div');
+          empty.className = 'dropzone-empty';
+          empty.textContent = 'Sin tareas en esta columna';
+          body.appendChild(empty);
+        }
+        document.getElementById(`count-${status}`).textContent = counts[status];
+      }
+    }
+
+    function renderLogs() {
+      const logsEl = document.getElementById('logs');
+      logsEl.innerHTML = '';
+      if (!agentData.logs.length) {
+        logsEl.innerHTML = '<div class="dropzone-empty">Todavía no hay eventos registrados</div>';
+      } else {
+        agentData.logs.forEach(log => {
+          const item = document.createElement('div');
+          item.className = 'log-item';
+          item.innerHTML = `<div class="log-icon">${sanitize(log.icon || 'ℹ️')}</div><div><div class="log-text">${sanitize(log.message)}</div><div class="log-time">${sanitize(log.time || '')}</div></div>`;
+          logsEl.appendChild(item);
+        });
+      }
+      document.getElementById('logsCounter').textContent = `${agentData.logs.length} eventos`;
+    }
+
+    function clearDropIndicators() {
+      document.querySelectorAll('.task.drop-before').forEach(el => el.classList.remove('drop-before'));
+      document.querySelectorAll('.column-body.drop-at-end').forEach(el => el.classList.remove('drop-at-end'));
+    }
+
+    function getDragAfterElement(container, y) {
+      const items = [...container.querySelectorAll('.task:not(.dragging)')];
+      return items.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset, element: child };
+        }
+        return closest;
+      }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+    }
+
+    function reorderTask(taskId, targetStatus, beforeTaskId = null) {
+      const currentIndex = agentData.tasks.findIndex(t => t.id === taskId);
+      if (currentIndex === -1) return;
+
+      const [task] = agentData.tasks.splice(currentIndex, 1);
+      const previousStatus = task.estado;
+      task.estado = targetStatus;
+
+      let insertIndex = agentData.tasks.length;
+      if (beforeTaskId) {
+        const beforeIndex = agentData.tasks.findIndex(t => t.id === beforeTaskId);
+        insertIndex = beforeIndex === -1 ? agentData.tasks.length : beforeIndex;
+      } else {
+        const lastSameStatusIndex = [...agentData.tasks].map((t, i) => t.estado === targetStatus ? i : -1).filter(i => i !== -1).pop();
+        insertIndex = lastSameStatusIndex === undefined ? agentData.tasks.length : lastSameStatusIndex + 1;
+      }
+
+      agentData.tasks.splice(insertIndex, 0, task);
+      agentData.lastUpdate = nowLabel();
+
+      if (previousStatus !== targetStatus) {
+        addLog(`La tarea "${task.titulo}" ha pasado a "${targetStatus}".`, targetStatus === 'Finalizada' ? '✅' : targetStatus === 'En progreso' ? '🚀' : '📝');
+      } else {
+        addLog(`Reordenada la tarea "${task.titulo}" en "${targetStatus}".`, '↕️');
+      }
+
+      renderAll();
+      requestAnimationFrame(() => animateTask(taskId));
+    }
+
+    function bindDropZones() {
+      document.querySelectorAll('.column').forEach(column => {
+        const body = column.querySelector('.column-body');
+        if (!body) return;
+
+        column.ondragover = (e) => {
+          e.preventDefault();
+          column.classList.add('drag-over');
+        };
+        column.ondragleave = (e) => {
+          if (!column.contains(e.relatedTarget)) {
+            column.classList.remove('drag-over');
+            clearDropIndicators();
+          }
+        };
+
+        body.ondragover = (e) => {
+          e.preventDefault();
+          column.classList.add('drag-over');
+          clearDropIndicators();
+          const afterElement = getDragAfterElement(body, e.clientY);
+          if (afterElement) {
+            afterElement.classList.add('drop-before');
+          } else {
+            body.classList.add('drop-at-end');
+          }
+        };
+
+        body.ondrop = (e) => {
+          e.preventDefault();
+          const taskId = e.dataTransfer.getData('text/plain') || draggedTaskId;
+          if (!taskId) return;
+          const afterElement = getDragAfterElement(body, e.clientY);
+          const beforeTaskId = afterElement ? afterElement.dataset.id : null;
+          clearDropIndicators();
+          column.classList.remove('drag-over');
+          reorderTask(taskId, column.dataset.status, beforeTaskId);
+        };
+      });
+    }
+
+    function renderAll() {
+      renderStats();
+      renderKanban();
+      renderLogs();
+      bindDropZones();
+      saveState();
+    }
+
+    function animateTask(taskId) {
+      const escaped = window.CSS && CSS.escape ? CSS.escape(taskId) : taskId;
+      const el = document.querySelector(`.task[data-id="${escaped}"]`);
+      if (!el) return;
+      el.classList.add('updated');
+      setTimeout(() => el.classList.remove('updated'), 620);
+    }
+
+    function setStatus(taskId, status) {
+      const task = agentData.tasks.find(t => t.id === taskId);
+      if (!task || task.estado === status) return;
+      reorderTask(taskId, status, null);
+    }
+
+    function deleteTask(taskId) {
+      const task = agentData.tasks.find(t => t.id === taskId);
+      agentData.tasks = agentData.tasks.filter(t => t.id !== taskId);
+      agentData.lastUpdate = nowLabel();
+      addLog(`Se ha eliminado la tarea "${task?.titulo || taskId}".`, '🗑️');
+      renderAll();
+    }
+
+    
+    function editTask(taskId) {
+      const task = agentData.tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      editingTaskId = taskId;
+      document.getElementById('manualModalTitle').textContent = 'Editar tarea';
+      document.getElementById('applyManualModalBtn').textContent = 'Guardar cambios';
+
+      document.getElementById('manualTaskNumber').value = String(task.id || '').replace(/^TASK-/, '');
+      document.getElementById('manualTaskTitle').value = task.titulo || '';
+      document.getElementById('manualTaskDescription').value = task.descripcion || '';
+      document.getElementById('manualTaskActions').value = (task.acciones || []).join('\n');
+      document.getElementById('manualTaskPriority').value = task.priority || 'media';
+      document.getElementById('manualTaskStatus').value = task.estado || 'Creada';
+
+      document.getElementById('manualTaskNumber').disabled = true;
+      document.getElementById('manualTaskTitle').disabled = false;
+      document.getElementById('manualTaskPriority').disabled = true;
+      document.getElementById('manualTaskStatus').disabled = true;
+
+      // limpiar posible error visual anterior
+      document.getElementById('taskIdError').style.display = 'none';
+      document.getElementById('manualTaskNumber').style.border = '';
+
+      document.querySelector('#manualTaskModal .modal')?.classList.add('editing');
+      openModal('manualTaskModal');
+    }
+
+    function getNextTaskId() {
+      const nums = agentData.tasks
+        .map(t => (t.id || '').match(/TASK-(\d+)/))
+        .filter(Boolean)
+        .map(m => parseInt(m[1], 10));
+      const max = nums.length ? Math.max(...nums) : 0;
+      return String(max + 1).padStart(3, '0');
+    }
+
+    function createManualTaskFromModal() {
+      const descriptionField = document.getElementById('manualTaskDescription');
+      const actionsField = document.getElementById('manualTaskActions');
+      const errorEl = document.getElementById('taskIdError');
+      const inputEl = document.getElementById('manualTaskNumber');
+
+      // limpiar error visual previo
+      errorEl.style.display = 'none';
+      inputEl.style.border = '';
+
+      if (editingTaskId) {
+        const task = agentData.tasks.find(t => t.id === editingTaskId);
+        if (!task) return;
+
+        task.titulo = document.getElementById('manualTaskTitle').value.trim() || 'Sin título';
+        task.descripcion = descriptionField.value.trim() || 'Sin descripción adicional';
+        const updatedActions = actionsField.value
+          .split(/\r?\n/)
+          .map(v => v.trim())
+          .filter(Boolean);
+        task.actionChecks = syncActionChecks(task, { acciones: updatedActions });
+        task.acciones = updatedActions;
+
+        agentData.lastUpdate = nowLabel();
+        addLog(`Tarea editada: "${task.titulo}".`, '✏️');
+
+        editingTaskId = null;
+        resetManualTaskModal();
+        editingTaskId = null;
+        resetManualTaskModal();
+        closeModal('manualTaskModal');
+        renderAll();
+        return;
+      }
+
+      const priority = document.getElementById('manualTaskPriority').value;
+      const newId = 'TASK-' + (
+        inputEl.value.trim() ||
+        String(agentData.tasks.length + 1).padStart(3, '0')
+      );
+
+      const exists = agentData.tasks.some(t => t.id === newId);
+      if (exists) {
+        addLog(`Error: ya existe una tarea con ID "${newId}".`, '⚠️');
+        renderLogs();
+        errorEl.style.display = 'block';
+        inputEl.style.border = '1px solid #ef4444';
+        return;
+      }
+
+      const manualActions = actionsField.value.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+      const task = normalizeTask({
+        id: newId,
+        icono: PRIORITY_EMOJI[priority],
+        titulo: document.getElementById('manualTaskTitle').value.trim(),
+        descripcion: descriptionField.value.trim() || 'Sin descripción adicional',
+        estado: document.getElementById('manualTaskStatus').value,
+        acciones: manualActions,
+        actionChecks: manualActions.map(() => false),
+        source: 'manual'
+      }, agentData.tasks.length, true);
+
+      if (!task.titulo) {
+        addLog('No se puede crear una tarea manual sin título.', '⚠️');
+        renderLogs();
+        return;
+      }
+
+      agentData.tasks.unshift(task);
+      agentData.lastUpdate = nowLabel();
+      addLog(`Nueva tarea manual añadida: "${task.titulo}".`, '➕');
+      renderAll();
+
+      requestAnimationFrame(() => {
+        const escaped = window.CSS && CSS.escape ? CSS.escape(task.id) : task.id;
+        const card = document.querySelector(`.task[data-id="${escaped}"]`);
+        if (card) {
+          card.classList.add('new');
+          setTimeout(() => card.classList.remove('new'), 460);
+        }
+      });
+
+      resetManualTaskModal();
+      closeModal('manualTaskModal');
+    }
+
+    function resetManualTaskModal() {
+      document.getElementById('manualModalTitle').textContent = 'Crear tarea manual';
+      document.getElementById('applyManualModalBtn').textContent = 'Crear tarea';
+
+      document.getElementById('manualTaskNumber').value = '';
+      document.getElementById('manualTaskTitle').value = '';
+      document.getElementById('manualTaskDescription').value = '';
+      document.getElementById('manualTaskActions').value = '';
+      document.getElementById('manualTaskPriority').value = 'media';
+      document.getElementById('manualTaskStatus').value = 'Creada';
+
+      document.getElementById('manualTaskNumber').disabled = false;
+      document.getElementById('manualTaskTitle').disabled = false;
+      document.getElementById('manualTaskPriority').disabled = false;
+      document.getElementById('manualTaskStatus').disabled = false;
+
+      document.getElementById('taskIdError').style.display = 'none';
+      document.getElementById('manualTaskNumber').style.border = '';
+      document.querySelector('#manualTaskModal .modal')?.classList.remove('editing');
+    }
+
+    function mergeTasksPreservingLocalChanges(newTasks) {
+      const existingMap = new Map(
+        agentData.tasks.map(task => [task.id, task])
+      );
+      const merged = newTasks.map(newTask => {
+        const existing = existingMap.get(newTask.id);
+        if (existing) {
+          return {
+            ...existing,
+            titulo: newTask.titulo,
+            descripcion: newTask.descripcion,
+            acciones: newTask.acciones,
+            actionChecks: getUpdatedActionChecks(existing, newTask),
+            priority: newTask.priority,
+            icono: newTask.icono,
+            estado: newTask.estado,
+            source: 'agent'
+          };
+        }
+        return {
+          ...newTask,
+          actionChecks: normalizeIncomingActionChecks(newTask),
+          source: 'agent'
+        };
+      });
+      const manualOnly = agentData.tasks.filter(task =>
+        task.source === 'manual' &&
+        !newTasks.some(newTask => newTask.id === task.id)
+      );
+      return [...manualOnly, ...merged];
+    }
+
+    function updateFromRawText(rawText) {
+      try {
+        const incomingTasks = parseAgentJson(rawText);
+        agentData.tasks = mergeTasksPreservingLocalChanges(incomingTasks);
+        agentData.lastUpdate = nowLabel();
+        document.getElementById('rawInput').value = rawText;
+        document.getElementById('agentJsonTextarea').value = rawText;
+        addLog('JSON del agente procesado y tablero refrescado sin perder cambios locales.', '🔄');
+        renderAll();
+      } catch (error) {
+        addLog(`Error al procesar JSON: ${error.message}`, '⚠️');
+        renderLogs();
+      }
+    }
+
+    async function copyCurrentJson() {
+      const payload = agentData.tasks.map(taskToExport);
+      const json = JSON.stringify(payload, null, 2);
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(json);
+        } else {
+          const temp = document.createElement('textarea');
+          temp.value = json;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand('copy');
+          temp.remove();
+        }
+        addLog('JSON actualizado copiado al portapapeles.', '📋');
+      } catch (error) {
+        addLog('No se ha podido copiar el JSON al portapapeles.', '⚠️');
+      }
+      renderLogs();
+    }
+
+    function updatePage() {
+      const pages = document.getElementById('pages');
+      pages.style.transform = `translateX(-${agentData.currentPage * 100}vw)`;
+      document.querySelectorAll('.pager-dot').forEach((dot, idx) => dot.classList.toggle('active', idx === agentData.currentPage));
+      document.getElementById('prevPageBtn').disabled = agentData.currentPage === 0;
+      document.getElementById('nextPageBtn').disabled = agentData.currentPage === 1;
+      saveState();
+    }
+
+    function goToPage(pageIndex) {
+      const next = Math.max(0, Math.min(1, pageIndex));
+      if (next === agentData.currentPage) return;
+      agentData.currentPage = next;
+      updatePage();
+    }
+
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      const focusTarget = modal.querySelector('textarea, input');
+      if (focusTarget) focusTarget.focus();
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    document.getElementById('filterPriority').addEventListener('change', renderAll);
+    document.getElementById('filterSearch').addEventListener('input', renderAll);
+
+    document.getElementById('resetStorageBtn').addEventListener('click', () => {
+      clearState();
+      addLog('Se ha limpiado el estado persistido en localStorage.', '🧹');
+      renderAll();
+    });
+
+    document.getElementById('openAgentInputBtn').addEventListener('click', () => {
+      document.getElementById('agentJsonTextarea').value = document.getElementById('rawInput').value;
+      openModal('agentInputModal');
+    });
+    document.getElementById('closeAgentModalBtn').addEventListener('click', () => closeModal('agentInputModal'));
+    document.getElementById('cancelAgentModalBtn').addEventListener('click', () => closeModal('agentInputModal'));
+    document.getElementById('applyAgentModalBtn').addEventListener('click', () => {
+      const rawText = document.getElementById('agentJsonTextarea').value.trim();
+      if (rawText) {
+        document.getElementById('rawInput').value = rawText;
+        updateFromRawText(rawText);
+      }
+      closeModal('agentInputModal');
+    });
+
+    document.getElementById('openManualTaskBtn').addEventListener('click', () => {
+      editingTaskId = null;
+      resetManualTaskModal();
+      document.getElementById('manualTaskNumber').value = getNextTaskId();
+      openModal('manualTaskModal');
+    });
+    document.getElementById('closeManualModalBtn').addEventListener('click', () => { editingTaskId = null; resetManualTaskModal(); closeModal('manualTaskModal'); }); resetManualTaskModal(); closeModal('manualTaskModal');
+    document.getElementById('cancelManualModalBtn').addEventListener('click', () => { editingTaskId = null; resetManualTaskModal(); closeModal('manualTaskModal'); }); resetManualTaskModal(); closeModal('manualTaskModal');
+    document.getElementById('applyManualModalBtn').addEventListener('click', createManualTaskFromModal);
+    document.getElementById('manualTaskNumber').addEventListener('input', () => {
+      const errorEl = document.getElementById('taskIdError');
+      const inputEl = document.getElementById('manualTaskNumber');
+      errorEl.style.display = 'none';
+      inputEl.style.border = '';
+    });
+
+    ['agentInputModal', 'manualTaskModal'].forEach(modalId => {
+      document.getElementById(modalId).addEventListener('click', (event) => {
+        if (event.target.id === modalId) { if (modalId === 'manualTaskModal') { editingTaskId = null; resetManualTaskModal(); } closeModal(modalId); }
+      });
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeModal('agentInputModal');
+        closeModal('manualTaskModal');
+      }
+      if (event.key === 'ArrowRight') goToPage(1);
+      if (event.key === 'ArrowLeft') goToPage(0);
+    });
+
+    document.getElementById('reloadStoredJsonBtn').addEventListener('click', () => {
+      const rawText = document.getElementById('rawInput').value.trim();
+      if (rawText) {
+        updateFromRawText(rawText);
+      } else {
+        addLog('No hay JSON guardado para reaplicar.', 'ℹ️');
+        renderLogs();
+      }
+    });
+
+    document.getElementById('copyJsonBtn').addEventListener('click', copyCurrentJson);
+    document.getElementById('prevPageBtn').addEventListener('click', () => goToPage(agentData.currentPage - 1));
+    document.getElementById('nextPageBtn').addEventListener('click', () => goToPage(agentData.currentPage + 1));
+    document.querySelectorAll('.pager-dot').forEach(dot => {
+      dot.addEventListener('click', () => goToPage(Number(dot.dataset.page)));
+    });
+
+    document.getElementById('loadDemoBtn').addEventListener('click', () => {
+      const demo = `[
+  {
+    "id": "TASK-001",
+    "icono": "🔴",
+    "titulo": "Autorización para descarga de documento 6411 67001",
+    "descripcion": "Gestionar la autorización necesaria para poder descargar y etiquetar el documento solicitado.",
+    "estado": "Creada",
+    "acciones": [
+      "Al completar → avisar a Felipe de que ya tienes el documento",
+      "Al completar → subirlo al inventario de documentación local del BO App"
+    ]
+  },
+  {
+    "id": "TASK-002",
+    "icono": "🔴",
+    "titulo": "Enviar plantilla statement para governance",
+    "descripcion": "Preparar y enviar la plantilla requerida para la reunión de governance del proyecto.",
+    "estado": "Creada",
+    "acciones": []
+  },
+  {
+    "id": "TASK-003",
+    "icono": "🔴",
+    "titulo": "Validar versiones de código y completar descarga análisis",
+    "descripcion": "Verificar que las versiones del código son correctas antes de continuar con la descarga y análisis.",
+    "estado": "En progreso",
+    "acciones": []
+  },
+  {
+    "id": "TASK-004",
+    "icono": "🟠",
+    "titulo": "Completar requisitos para acceso al repositorio IPR",
+    "descripcion": "Cumplir los requisitos necesarios formación y NDA para obtener acceso al repositorio IPR.",
+    "estado": "Creada",
+    "acciones": []
+  },
+  {
+    "id": "TASK-005",
+    "icono": "🟠",
+    "titulo": "Revisar y cerrar tareas CI CD TFL",
+    "descripcion": "Avanzar en las tareas pendientes de CI CD incluyendo estimaciones y workflows.",
+    "estado": "En progreso",
+    "acciones": []
+  },
+  {
+    "id": "TASK-006",
+    "icono": "🟢",
+    "titulo": "Seguimiento de acciones InfoSec Encryption",
+    "descripcion": "Dar seguimiento a las actividades derivadas de las reuniones de InfoSec Encryption.",
+    "estado": "En progreso",
+    "acciones": []
+  }
+]`;
+      document.getElementById('rawInput').value = demo;
+      document.getElementById('agentJsonTextarea').value = demo;
+      saveState();
+      updateFromRawText(demo);
+    });
+
+    if (!loadState()) {
+      document.getElementById('loadDemoBtn').click();
+    } else {
+      renderAll();
+      addLog('Estado recuperado desde localStorage.', '💾');
+      renderAll();
+    }
+    updatePage();
+
+    window.updateFromRawText = updateFromRawText;
+    window.copyCurrentJson = copyCurrentJson;
+    window.toggleActionCheck = toggleActionCheck;
+    window.suggestTaskFinalization = suggestTaskFinalization;
+
+  </script>
+</body>
+</html>
