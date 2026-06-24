@@ -1202,7 +1202,7 @@
 
       document.getElementById('manualTaskNumber').disabled = true;
       document.getElementById('manualTaskTitle').disabled = false;
-      document.getElementById('manualTaskPriority').disabled = true;
+      document.getElementById('manualTaskPriority').disabled = false;
       document.getElementById('manualTaskStatus').disabled = true;
 
       // limpiar posible error visual anterior
@@ -1244,6 +1244,8 @@
           .filter(Boolean);
         task.actionChecks = syncActionChecks(task, { acciones: updatedActions });
         task.acciones = updatedActions;
+        task.priority = document.getElementById('manualTaskPriority').value;
+        task.icono = PRIORITY_EMOJI[task.priority];
 
         agentData.lastUpdate = nowLabel();
         addLog(`Tarea editada: "${task.titulo}".`, '✏️');
